@@ -1,0 +1,31 @@
+steps:
+  # Docker Build
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build',
+           '--build-arg', 
+           'PROJECT_ID=$PROJECT_ID', 
+           '--build-arg', 
+           'BRONZE_BUCKET=$_BRONZE_BUCKET',            
+           '-t', 
+           'asia-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA', 
+           '.']
+
+  # Docker Push
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 
+           'asia-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA']
+
+  # Deploy image to Cloud Run Job
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    timeout: 1200s
+    args: ['run', 'jobs',
+           'deploy',
+           '$_SERVICE_NAME',
+           '--image',
+           'asia-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA', 
+           '--region',
+           'asia-east1']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
